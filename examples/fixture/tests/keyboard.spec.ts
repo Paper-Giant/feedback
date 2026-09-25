@@ -163,6 +163,11 @@ test.describe('Keyboard traversal — the kind radio group, Details summary, Can
     browserName,
   }) => {
     test.skip(browserName !== 'webkit', 'documents the WebKit-specific default; see the Chromium/Firefox test above for the rest');
+    // Safari's "Tab reaches text fields and lists only" default is a macOS setting (full keyboard
+    // access off). Playwright's WebKit on Linux (CI) has no such default and tabs to radios and
+    // buttons, so this characterisation only holds on macOS; elsewhere, the "focus never lands on
+    // real host-page content" test below is the WebKit keyboard guarantee.
+    test.skip(process.platform !== 'darwin', 'the macOS Safari Tab default does not apply to WebKit on this platform');
 
     await page.goto('/vanilla.html');
     await openDialog(page);
