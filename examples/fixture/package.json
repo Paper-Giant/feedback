@@ -1,0 +1,33 @@
+{
+  "name": "@papergiant/feedback-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Test host for @papergiant/feedback (P10a): a stub GitHub, a Hono host server, Vite pages (vanilla, React 19, Radix) and Playwright specs. Not published; not part of the package's dependency tree.",
+  "scripts": {
+    "build:pages": "vite build",
+    "start:stub": "tsx stub-github.ts",
+    "start:host": "tsx server.ts",
+    "test": "playwright test",
+    "test:install": "playwright install chromium webkit firefox"
+  },
+  "dependencies": {
+    "@papergiant/feedback": "file:../.."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@hono/node-server": "^1.19.6",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^20.19.19",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.6",
+    "@vitejs/plugin-react": "^4.3.4",
+    "hono": "^4.9.11",
+    "radix-ui": "^1.6.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.6"
+  }
+}

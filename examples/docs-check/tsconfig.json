@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@/*": ["./*"],
+      "astro/config": ["./stubs/astro-config.ts"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.js"],
+  "exclude": ["node_modules", "extract-samples.mjs"]
+}

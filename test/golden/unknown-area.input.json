@@ -1,0 +1,27 @@
+{
+  "payload": {
+    "schema": "feedback/v1",
+    "report_id": "77777777-7777-4777-8777-777777777777",
+    "kind": "bug",
+    "what_happened": "The results chart is blank on this page.",
+    "area": "nonexistent-page"
+  },
+  "identity": {
+    "ref": "c2d3e4f5-6789-4abc-9def-0123456789ab",
+    "role": "place_member",
+    "surface": "customer",
+    "allowReference": false
+  },
+  "host": {
+    "app": "example-app",
+    "displayName": "Example",
+    "productRepository": "example-org/example-app",
+    "environment": "uat",
+    "areas": {
+      "checkout-wizard": "app/(app)/orders/[order_id]/steps/[step_id]/page.tsx",
+      "dashboard": null
+    },
+    "receivingCommit": "9f4c2a1d7e803bd2a61549c0e176fed32208aabc"
+  },
+  "receivedAt": "2026-09-29T04:12:00.000Z"
+}

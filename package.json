@@ -1,0 +1,97 @@
+{
+  "name": "@papergiant/feedback",
+  "version": "0.1.0",
+  "description": "In-app feedback dialog and pipe that files reports as GitHub issues in a private intake repository.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paper-Giant/feedback.git"
+  },
+  "homepage": "https://github.com/Paper-Giant/feedback#readme",
+  "bugs": {
+    "url": "https://github.com/Paper-Giant/feedback/issues"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "default": "./dist/browser/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./dist/server/index.js"
+    },
+    "./github": {
+      "types": "./dist/github/index.d.ts",
+      "default": "./dist/github/index.js"
+    },
+    "./limit": {
+      "types": "./dist/limit/index.d.ts",
+      "default": "./dist/limit/index.js"
+    },
+    "./build": {
+      "types": "./dist/build/index.d.ts",
+      "default": "./dist/build/index.js"
+    }
+  },
+  "bin": {
+    "papergiant-feedback": "dist/bin/doctor.js"
+  },
+  "files": [
+    "dist",
+    "sql",
+    "README.md",
+    "INSTALL.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "pack:check": "npm run build && npm pack --dry-run",
+    "fixture:test": "npm --prefix examples/fixture ci && npm --prefix examples/fixture test",
+    "react18:test": "npm --prefix examples/react18 ci && npm --prefix examples/react18 run typecheck && npm --prefix examples/react18 run test:ssr && npm --prefix examples/react18 test",
+    "vanilla:test": "npm --prefix examples/vanilla ci && npm --prefix examples/vanilla run typecheck && npm --prefix examples/vanilla run test:no-react && npm --prefix examples/vanilla test",
+    "golden:update": "npm run build && node scripts/regen-golden.mjs"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^29.1.1",
+    "postgres": "^3.4.9",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,0 +1,6 @@
+[
+  "source:in-app",
+  "app:example-app",
+  "env:uat",
+  "kind:help"
+]

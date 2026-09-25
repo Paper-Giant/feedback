@@ -1,0 +1,134 @@
+name: Publish
+
+# Real publish: a `v*` tag push. Dry run: triggered by hand at any time,
+# to prove the publish step itself (auth, provenance, package contents)
+# still works without waiting for a tag or actually publishing anything.
+# Neither trigger publishes without the "npm" environment's approval —
+# see the `publish` job below.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+# Read-only by default; `id-token: write` (needed only for the OIDC
+# trusted-publishing exchange) is granted on the `publish` job alone,
+# below, not here — `verify` never needs to mint anything.
+permissions:
+  contents: read
+
+jobs:
+  # Build, typecheck and unit-test, plus a pack dry run. This is NOT the
+  # same gate the fixture's real-browser Playwright suite runs under
+  # (that lives in ci.yml, on every push and PR, not here) — this job
+  # exists so a broken build or a failing unit test never reaches the
+  # `npm` environment's required reviewers, not to re-run everything CI
+  # already covers. The Postgres service mirrors ci.yml's, so the
+  # sql/postgres-limiter.sql suite (test/sql/limiter.sql.test.ts) runs
+  # here too rather than silently skipping for lack of a database.
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      FEEDBACK_TEST_DATABASE_URL: postgres://postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      # `npm test`'s own `pretest` script runs `npm run build` first
+      # (see package.json), so `dist/` exists by the time this finishes.
+      - run: npm test
+
+      - run: npm pack --dry-run
+
+      # On a real release (a tag push), the tag itself must name the
+      # version being published — catches "forgot to bump package.json"
+      # and "typo'd the tag" before anything reaches the `npm`
+      # environment's reviewer, not after.
+      - name: Tag matches package.json version
+        if: github.event_name == 'push'
+        run: |
+          test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    # Required reviewers, secrets and protection rules for this job are
+    # configured on the "npm" environment in the repository's settings,
+    # not in this file — that is what actually gates a real publish. That
+    # environment must be created and restricted (to protected branches
+    # plus `v*` tags, with at least one required reviewer) before the
+    # first real release; it can't be configured from this file, and is
+    # pending until Paper-Giant/feedback itself exists. Until then, this
+    # job runs for `workflow_dispatch` dry runs against no environment
+    # gate at all — do not rely on this workflow to enforce review until
+    # that environment is confirmed present and restricted as described.
+    environment: npm
+    # Granted on this job alone: this is what lets `publish` (and only
+    # this job) exchange a short-lived GitHub Actions OIDC token for an
+    # npm trusted-publishing credential — no NODE_AUTH_TOKEN / registry
+    # secret is configured anywhere in this file, real publish or dry run.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      # npm trusted publishing (OIDC) needs npm >= 11.5.1. Node 22's
+      # bundled npm predates that on many runner images, so upgrade
+      # explicitly rather than relying on whatever setup-node shipped.
+      # Pinned to the 11.x line, not @latest, so a future major npm
+      # release can't change this job's behaviour unreviewed.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@11
+
+      - run: npm ci
+
+      # This job is a separate runner from `verify` above (GitHub Actions
+      # jobs share no filesystem by default), so `dist/` has to be built
+      # again here before either publish step below can pack it.
+      - run: npm run build
+
+      # The real, provenance-attested publish. No token: npm authenticates
+      # via this job's OIDC identity, which npmjs.com only accepts for the
+      # workflow this package's trusted-publisher settings name. A
+      # prerelease version (e.g. 0.2.0-rc.1) would need `--tag next` here
+      # — npm's default `--tag latest` refuses to make a prerelease the
+      # version installers get without one — but 0.1.0 does not need it.
+      - name: Publish
+        if: github.event_name == 'push'
+        run: npm publish --provenance --access public
+
+      # workflow_dispatch never runs the step above — this one runs
+      # instead, and never publishes for real, but still requires the
+      # "npm" environment's approval to run (once that environment is
+      # restricted per the note above), so a dry run still proves the
+      # OIDC/provenance path under the same gate a real publish uses.
+      - name: Publish (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        run: npm publish --dry-run --provenance --access public

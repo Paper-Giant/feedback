@@ -1,0 +1,28 @@
+{
+  "name": "@papergiant/feedback-docs-check",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Compiles every ts/tsx/js/mjs code sample in INSTALL.md and README.md against real host dependencies (task P12 review item 21). Not published; not part of the package's dependency tree.",
+  "scripts": {
+    "extract": "node extract-samples.mjs",
+    "check": "npm run extract && tsc --strict --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@papergiant/feedback": "file:../..",
+    "next": "^16",
+    "react": "^19",
+    "react-dom": "^19",
+    "@supabase/supabase-js": "^2",
+    "@supabase/ssr": "latest",
+    "hono": "^4",
+    "@hono/node-server": "^1"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/node": "^20",
+    "vite": "^6"
+  }
+}

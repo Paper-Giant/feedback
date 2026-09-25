@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    // Task P10: this consumer's whole point is to typecheck the package's
+    // emitted .d.ts against a real, independently pinned @types/react
+    // 18.3.x — skipLibCheck:false means TypeScript actually checks
+    // @papergiant/feedback's declaration files (and @types/react's) for
+    // errors, rather than trusting them unread (build plan P12: "hosts
+    // typechecking libraries (skipLibCheck: false) need TypeScript >= 5.7
+    // and @types/react >= 18.2.7" — both satisfied here). This only
+    // proves anything against a real, unpacked @papergiant/feedback (the
+    // packed tarball) — through the local-dev "file:../.." symlink,
+    // TypeScript resolves the package's own .d.ts (and the @types/react
+    // it was written against) via the package root's own @types/react
+    // devDependency (19.x) instead of this project's pinned 18.3.x (see
+    // ssr-check.tsx's header for the runtime version of the same hazard),
+    // which fails to typecheck for an unrelated reason (two conflicting
+    // React.ReactNode definitions) — run `npm run typecheck` here after
+    // installing the tarball, same as CI.
+    "skipLibCheck": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist-pages", "playwright-report", "test-results"]
+}

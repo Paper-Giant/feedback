@@ -1,0 +1,26 @@
+{
+  "payload": {
+    "schema": "feedback/v1",
+    "report_id": "55555555-5555-4555-8555-555555555555",
+    "kind": "idea",
+    "what_happened": "It would help to see last round’s score next to this one."
+  },
+  "identity": {
+    "ref": "c2d3e4f5-6789-4abc-9def-0123456789ab",
+    "role": "place_member",
+    "surface": "customer",
+    "allowReference": false
+  },
+  "host": {
+    "app": "example-app",
+    "displayName": "Example",
+    "productRepository": "example-org/example-app",
+    "environment": "uat",
+    "areas": {
+      "checkout-wizard": "app/(app)/orders/[order_id]/steps/[step_id]/page.tsx",
+      "dashboard": null
+    },
+    "receivingCommit": "9f4c2a1d7e803bd2a61549c0e176fed32208aabc"
+  },
+  "receivedAt": "2026-09-29T04:12:00.000Z"
+}

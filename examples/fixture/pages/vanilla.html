@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feedback fixture · vanilla</title>
+  </head>
+  <body>
+    <main>
+      <h1>Feedback fixture — vanilla</h1>
+      <p data-testid="sentinel-dom">SENTINEL_DOM</p>
+
+      <form data-testid="host-form" onsubmit="return false">
+        <label>
+          Host note
+          <input data-testid="host-form-field" value="SENTINEL_FORM" />
+        </label>
+      </form>
+
+      <button data-testid="launcher" type="button">Give feedback</button>
+    </main>
+    <script type="module" src="./vanilla.ts"></script>
+  </body>
+</html>

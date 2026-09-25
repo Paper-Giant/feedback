@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    # Postgres 16, for the sql/postgres-limiter.sql tests in
+    # test/sql/limiter.sql.test.ts (task P4). POSTGRES_HOST_AUTH_METHOD is
+    # trust: this container only ever exists for this job's lifetime and
+    # only listens on the job's localhost, and the test file itself
+    # connects as several unprivileged Postgres roles it creates, so trust
+    # auth avoids managing passwords for roles that exist only within a
+    # single CI run.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      FEEDBACK_TEST_DATABASE_URL: postgres://postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+  # Task P10: the package packed exactly as it will ship, installed into
+  # three independent consumers (examples/fixture, examples/react18,
+  # examples/vanilla — each its own npm project, its own lockfile, not
+  # part of this package's own dependency tree) from that tarball, not a
+  # workspace link or a dist/ alias. Matrixed per Playwright project
+  # (chromium/webkit/firefox), because that's the fixture's own suite
+  # (P9) — the larger of the three and the one worth splitting across
+  # runners; react18's and vanilla's much smaller suites just piggyback on
+  # the same matrix leg (`--project=${{ matrix.project }}`), and each
+  # consumer's non-Playwright checks (typecheck, the SSR check, the
+  # no-React check) are guarded to the chromium leg so they run exactly
+  # once per CI run rather than three times over.
+  pack-and-consumers:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, webkit, firefox]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # `npm pack` writes papergiant-feedback-<version>.tgz at the repo
+      # root (gitignored — see .gitignore's `*.tgz`). Every consumer below
+      # installs *that* tarball, `--no-save`, so no per-pack integrity
+      # hash ever lands in a committed lockfile (P10's package.json
+      # dependency stays `"file:../.."`, for local development).
+      - run: npm pack
+
+      - name: "examples/fixture — install (file: link, then the tarball)"
+        working-directory: examples/fixture
+        run: |
+          npm ci
+          npm install --no-save ../../papergiant-feedback-*.tgz
+
+      - name: "examples/react18 — install (file: link, then the tarball)"
+        working-directory: examples/react18
+        run: |
+          npm ci
+          npm install --no-save ../../papergiant-feedback-*.tgz
+
+      - name: "examples/vanilla — install (file: link, then the tarball)"
+        working-directory: examples/vanilla
+        run: |
+          npm ci
+          npm install --no-save ../../papergiant-feedback-*.tgz
+
+      # One shared Playwright browser cache (all three consumers pin the
+      # same @playwright/test version), scoped to this leg's own browser.
+      - run: npx --prefix examples/fixture playwright install --with-deps ${{ matrix.project }}
+
+      # Non-Playwright checks: once per CI run, not once per matrix leg.
+      - name: examples/react18 — typecheck (skipLibCheck:false against pinned @types/react 18.3.x)
+        if: matrix.project == 'chromium'
+        working-directory: examples/react18
+        run: npm run typecheck
+
+      - name: examples/react18 — SSR check (react-dom/server, no DOM)
+        if: matrix.project == 'chromium'
+        working-directory: examples/react18
+        run: npm run test:ssr
+
+      - name: examples/vanilla — typecheck
+        if: matrix.project == 'chromium'
+        working-directory: examples/vanilla
+        run: npm run typecheck
+
+      - name: examples/vanilla — no-React check (every non-React entry, /react fails cleanly)
+        if: matrix.project == 'chromium'
+        working-directory: examples/vanilla
+        run: npm run test:no-react
+
+      - name: examples/docs-check — every INSTALL/README sample typechecks against the tarball
+        if: matrix.project == 'chromium'
+        working-directory: examples/docs-check
+        run: |
+          npm ci
+          npm install --no-save ../../papergiant-feedback-*.tgz
+          npm run check
+
+      - name: examples/fixture — Playwright (${{ matrix.project }})
+        working-directory: examples/fixture
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - name: examples/react18 — Playwright (${{ matrix.project }})
+        working-directory: examples/react18
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - name: examples/vanilla — Playwright (${{ matrix.project }})
+        working-directory: examples/vanilla
+        run: npx playwright test --project=${{ matrix.project }}
